@@ -1,0 +1,59 @@
+services:
+  db:
+    image: mysql:8.3
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=ChangeMe
+      - MYSQL_DATABASE=ps_db
+      - MYSQL_USER=ps_db_user
+      - MYSQL_PASSWORD=ChangeMe2
+    volumes:
+      - db_data:/var/lib/mysql:rw
+    command: '--default-authentication-plugin=mysql_native_password'
+    networks:
+      net:
+
+  php:
+    restart: unless-stopped
+    image: ftladmin/php-8.3-fpm-alpine
+    volumes:
+      - php_config:/usr/local/etc/php
+      - http_root:/var/www/html:rw
+    networks:
+      net:
+
+  webserver:
+    depends_on:
+      - db
+      - php
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - http_root:/var/www/html:rw
+      - nginx_conf:/etc/nginx/conf.d:rw
+    networks:
+      net:
+      PROXY:
+      
+  phpmyadmin:
+   image: phpmyadmin
+   ports:
+     - 88:80
+   networks:
+     net:
+      
+volumes:
+  http_root:
+    driver: local
+  nginx_conf:
+    driver: local
+  db_data:
+    driver: local
+  php_config:
+    driver: local
+
+networks:
+  net:
+  PROXY:
+    external: true
+    name: PROXY
